@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+	   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	   xmlns:context="http://www.springframework.org/schema/context"
+	   xsi:schemaLocation="
+		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.0.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.0.xsd">
+
+
+	<bean id="hikariConfig" class="com.zaxxer.hikari.HikariConfig">
+		<property name="dataSourceClassName" value="com.mysql.jdbc.jdbc2.optional.MysqlDataSource" />
+		<property name="maximumPoolSize" value="${MYDEMO_DB_C3P0_MAX_POOL_SIZE}" />
+		<property name="idleTimeout" value="300" />
+
+		<property name="dataSourceProperties">
+			<props>
+				<prop key="url">${MYDEMO_DB_BASEURL}${MYDEMO_DB_SERVER}:${MYDEMO_DB_PORT}/${MYDEMO_DB_NAME}${MYDEMO_DB_URLPARAMS}</prop>
+				<prop key="user">${MYDEMO_DB_USERNAME}</prop>
+				<prop key="password">${MYDEMO_DB_PASSWORD}</prop>
+			</props>
+		</property>
+	</bean>
+
+	<!-- HikariCP configuration -->
+	<bean id="dataSource" class="com.zaxxer.hikari.HikariDataSource" destroy-method="close" primary="true">
+		<constructor-arg ref="hikariConfig" />
+	</bean>
+
+	<bean id="flyway" class="org.flywaydb.core.Flyway" init-method="migrate" depends-on="dataSource">
+		<property name="dataSource" ref="dataSource" />
+		<!--<property name="initOnMigrate" value="true" />-->
+		<property name="locations" value="classpath:/db/migrations/main" />
+		<property name="validateOnMigrate" value="false" />
+		<property name="outOfOrder" value="true" />
+		<property name="placeholders">
+			<map>
+				<entry key="MYDEMO_DOCKER_HOSTNAME" value="${MYDEMO_DOCKER_HOSTNAME}" />
+			</map>
+		</property>
+	</bean>
+
+	<context:component-scan base-package="com.platformq"/>
+</beans>
